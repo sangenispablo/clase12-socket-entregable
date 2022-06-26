@@ -1,9 +1,8 @@
 const express = require("express");
 const cors = require("cors");
 
-// data de productos
-const productos = require("../data/productos");
-const chat = require("../data/chat");
+// controlador para el socket
+const socketController = require("../sockets/controllers");
 
 class Server {
   constructor() {
@@ -25,31 +24,7 @@ class Server {
   }
 
   sockets() {
-    this.io.on("connection", (socket) => {
-      // apenas se conecta mando los productos que ya tengo
-      this.io.emit("enviar-producto", productos);
-      this.io.emit("enviar-mensaje", chat);
-
-      // si quiero controlar las desconexiones
-      // socket.on("disconnect", () => {
-      //   console.log("cliente desconectado", socket.id);
-      // });
-
-      // escuchando al cliente
-      socket.on("enviar-producto", (payload) => {
-        // guardo el producto en el array global
-        productos.push(payload);
-        // este mismo producto se lo mando a todos los clientes conectados
-        // para eso uso el this.io
-        this.io.emit("enviar-producto", productos);
-      });
-
-      // escucho al cliente en otro evento
-      socket.on("enviar-mensaje", (payload) => {
-        chat.push(payload);
-        this.io.emit("enviar-mensaje", chat);
-      });
-    });
+    this.io.on("connection", socketController);
   }
 
   middlewares() {

@@ -5,11 +5,11 @@ const lblOffline = document.querySelector("#lblOffline");
 const title = document.querySelector("#title");
 const price = document.querySelector("#price");
 const thumbnail = document.querySelector("#thumbnail");
-const btnEnviarProducto = document.querySelector("#btnEnviarProducto");
+const formProductos = document.querySelector("#formProductos");
 // Formulario del Chat
 const usuario = document.querySelector("#usuario");
 const mensaje = document.querySelector("#mensaje");
-const btnEnviarChat = document.querySelector("#btnEnviarChat");
+const formChat = document.querySelector("#formChat");
 
 const socket = io();
 
@@ -21,8 +21,6 @@ socket.on("connect", (payload) => {
 });
 
 socket.on("disconnect", () => {
-  console.log("desconectado del servidor");
-
   lblOffline.style.display = "";
   lblOnline.style.display = "none";
 });
@@ -41,13 +39,17 @@ socket.on("enviar-producto", (payload) => {
   renderProducto(payload);
 });
 
-btnEnviarProducto.addEventListener("click", () => {
+formProductos.addEventListener("submit", (e) => {
+  e.preventDefault();
   const producto = {
     title: title.value,
     price: price.value,
     thumbnail: thumbnail.value,
   };
-  socket.emit("enviar-producto", producto);
+  // uso el callback del server para recuperar todos los productos
+  socket.emit("enviar-producto", producto, (productos) => {
+    renderProducto(productos);
+  });
   title.value = "";
   price.value = "";
   thumbnail.value = "";
@@ -56,9 +58,14 @@ btnEnviarProducto.addEventListener("click", () => {
 const renderChat = (chat) => {
   let html = "";
   chat.forEach((element) => {
-    html = html + `<li class="list-group-item">${element.usuario}-${element.mensaje}</li>`;
+    html =
+      html +
+      `<li class="list-group-item">
+          <span class="text-primary">${element.usuario}</span>
+          <span class="text-danger">[${moment(element.fecha).format("DD/MM/YYYY HH:MM:SS")}]</span>
+          : <span class="text-success fst-italic">${element.mensaje}</span>
+       </li>`;
   });
-  console.log(html);
   document.querySelector("#bodyChat").innerHTML = html;
 };
 
@@ -67,11 +74,15 @@ socket.on("enviar-mensaje", (payload) => {
   renderChat(payload);
 });
 
-btnEnviarChat.addEventListener("click", () => {
+formChat.addEventListener("submit", (e) => {
+  e.preventDefault();
   const payload = {
     usuario: usuario.value,
     mensaje: mensaje.value,
+    fecha: moment(),
   };
-  socket.emit("enviar-mensaje", payload);
+  socket.emit("enviar-mensaje", payload, (chat) => {
+    renderChat(chat);
+  });
   mensaje.value = "";
 });
